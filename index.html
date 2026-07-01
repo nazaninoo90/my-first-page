@@ -136,6 +136,74 @@
             font-style: normal;
         }
 
+        .my-bakes-section {
+            margin-top: 3rem;
+        }
+
+        .my-bakes-grid {
+            list-style: none;
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 1.5rem;
+        }
+
+        .bake-card {
+            background: #fff;
+            border-radius: 12px;
+            box-shadow: 0 3px 12px rgba(0, 0, 0, 0.08);
+            overflow: hidden;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .bake-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.12);
+        }
+
+        .bake-card img {
+            width: 100%;
+            height: 200px;
+            object-fit: cover;
+        }
+
+        .bake-card .bake-info {
+            padding: 1rem 1.25rem;
+        }
+
+        .bake-card .bake-info h3 {
+            font-size: 1.1rem;
+            color: #5c4033;
+            margin-bottom: 0.3rem;
+        }
+
+        .bake-card .bake-info p {
+            font-size: 0.9rem;
+            color: #6b5b4f;
+        }
+
+        .bake-card .bake-info .bake-date {
+            font-size: 0.8rem;
+            color: #a08c7a;
+            margin-top: 0.4rem;
+        }
+
+        .placeholder-card {
+            border: 2px dashed #d4a574;
+            background: #fdf8f2;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 280px;
+            border-radius: 12px;
+        }
+
+        .placeholder-card p {
+            color: #a08c7a;
+            font-size: 0.95rem;
+            text-align: center;
+            padding: 1.5rem;
+        }
+
         footer {
             text-align: center;
             padding: 2rem;
@@ -435,6 +503,26 @@
                 </div>
             </li>
         </ul>
+    </main>
+
+        <section class="my-bakes-section">
+            <h2>My Bakes</h2>
+            <ul class="my-bakes-grid">
+                <!-- Add your bakes here! Each card looks like this:
+                <li class="bake-card">
+                    <img src="images/your-photo.jpg" alt="Description of your bake">
+                    <div class="bake-info">
+                        <h3>What You Made</h3>
+                        <p>Your notes about how it turned out.</p>
+                        <p class="bake-date">June 2026</p>
+                    </div>
+                </li>
+                -->
+                <li class="placeholder-card">
+                    <p>Your bakes will go here!<br>Upload a photo to the images/ folder and add a card.</p>
+                </li>
+            </ul>
+        </section>
     </main>
 
     <footer>
