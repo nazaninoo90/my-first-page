@@ -229,7 +229,8 @@
             font-family: 'Georgia', serif;
         }
 
-        .bake-date-editable {
+        .bake-date-editable,
+        .bake-notes-editable {
             cursor: pointer;
             border-bottom: 1px dashed #d4a574;
             padding: 2px 4px;
@@ -237,7 +238,8 @@
             transition: background 0.2s;
         }
 
-        .bake-date-editable:hover {
+        .bake-date-editable:hover,
+        .bake-notes-editable:hover {
             background: #f5ede4;
         }
 
@@ -1259,7 +1261,7 @@
                     <img src="${bake.image}" alt="${bake.name}">
                     <div class="bake-info">
                         <h3>${bake.name}</h3>
-                        <p>${bake.notes}</p>
+                        <p class="${isAdmin ? 'bake-notes-editable' : ''}" data-index="${index}">${bake.notes}</p>
                         <p class="bake-date ${isAdmin ? 'bake-date-editable' : ''}" data-index="${index}">${bake.date}</p>
                     </div>
                 `;
@@ -1298,6 +1300,39 @@
                         input.onkeydown = (ev) => {
                             if (ev.key === 'Enter') input.blur();
                             if (ev.key === 'Escape') { input.value = currentDate; input.blur(); }
+                        };
+                    };
+                });
+
+                grid.querySelectorAll('.bake-notes-editable').forEach(el => {
+                    el.onclick = function(e) {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        e.stopImmediatePropagation();
+                        const index = parseInt(this.dataset.index);
+                        const currentNotes = bakes[index].notes;
+                        const textarea = document.createElement('textarea');
+                        textarea.className = 'bake-date-input';
+                        textarea.style.width = '100%';
+                        textarea.style.height = '60px';
+                        textarea.style.resize = 'vertical';
+                        textarea.value = currentNotes;
+                        this.style.display = 'none';
+                        this.parentNode.insertBefore(textarea, this.nextSibling);
+                        textarea.focus();
+
+                        textarea.onblur = () => {
+                            const newNotes = textarea.value.trim();
+                            if (newNotes !== currentNotes) {
+                                bakes[index].notes = newNotes;
+                                saveBakesJson().then(() => renderBakes());
+                            } else {
+                                textarea.remove();
+                                el.style.display = '';
+                            }
+                        };
+                        textarea.onkeydown = (ev) => {
+                            if (ev.key === 'Escape') { textarea.value = currentNotes; textarea.blur(); }
                         };
                     };
                 });
