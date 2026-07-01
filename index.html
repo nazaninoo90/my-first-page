@@ -363,6 +363,135 @@
             display: none;
         }
 
+        .img-editor {
+            display: none;
+            margin-top: 0.8rem;
+            background: #f5ede4;
+            border-radius: 8px;
+            padding: 1rem;
+        }
+
+        .img-editor.visible {
+            display: block;
+        }
+
+        .img-editor canvas {
+            max-width: 100%;
+            border-radius: 6px;
+            display: block;
+            margin-bottom: 0.8rem;
+            cursor: crosshair;
+        }
+
+        .editor-tools {
+            display: flex;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+        }
+
+        .editor-tools button {
+            padding: 0.4rem 0.8rem;
+            border-radius: 6px;
+            border: 1px solid #d4a574;
+            background: #fff;
+            color: #5c4033;
+            font-family: 'Georgia', serif;
+            font-size: 0.8rem;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .editor-tools button:hover {
+            background: #f5ede4;
+        }
+
+        .editor-tools button.active {
+            background: #5c4033;
+            color: #faf7f2;
+            border-color: #5c4033;
+        }
+
+        .crop-hint {
+            font-size: 0.75rem;
+            color: #a08c7a;
+            margin-top: 0.4rem;
+            display: none;
+        }
+
+        .crop-hint.visible {
+            display: block;
+        }
+
+        .lightbox-edit-btn {
+            display: none;
+            margin-top: 0.8rem;
+            padding: 0.5rem 1rem;
+            border-radius: 6px;
+            border: 1px solid #d4a574;
+            background: rgba(255,255,255,0.15);
+            color: #faf7f2;
+            font-family: 'Georgia', serif;
+            font-size: 0.85rem;
+            cursor: pointer;
+        }
+
+        .lightbox-edit-btn:hover {
+            background: rgba(255,255,255,0.25);
+        }
+
+        .admin-mode .lightbox-edit-btn {
+            display: inline-block;
+        }
+
+        .image-editor-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.9);
+            z-index: 2000;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+            padding: 2rem;
+        }
+
+        .image-editor-modal.visible {
+            display: flex;
+        }
+
+        .image-editor-modal canvas {
+            max-width: 90%;
+            max-height: 60vh;
+            border-radius: 8px;
+            cursor: crosshair;
+        }
+
+        .image-editor-modal .editor-tools {
+            margin-top: 1rem;
+            justify-content: center;
+        }
+
+        .image-editor-modal .editor-tools button {
+            background: rgba(255,255,255,0.15);
+            color: #faf7f2;
+            border-color: #d4a574;
+        }
+
+        .image-editor-modal .editor-tools button:hover {
+            background: rgba(255,255,255,0.25);
+        }
+
+        .image-editor-modal .editor-tools button.active {
+            background: #5c4033;
+        }
+
+        .image-editor-modal .crop-hint {
+            color: #d4a574;
+        }
+
         footer {
             text-align: center;
             padding: 2rem;
@@ -456,6 +585,17 @@
                 <label for="bakeImage">Photo</label>
                 <input type="file" id="bakeImage" accept="image/*">
                 <img class="img-preview" id="imgPreview">
+                <div class="img-editor" id="imgEditor">
+                    <canvas id="editorCanvas"></canvas>
+                    <div class="editor-tools">
+                        <button type="button" id="btnRotateLeft">Rotate Left</button>
+                        <button type="button" id="btnRotateRight">Rotate Right</button>
+                        <button type="button" id="btnCrop">Crop</button>
+                        <button type="button" id="btnApplyCrop" style="display:none">Apply Crop</button>
+                        <button type="button" id="btnResetEdit">Reset</button>
+                    </div>
+                    <p class="crop-hint" id="cropHint">Click and drag on the image to select crop area</p>
+                </div>
                 <div class="form-actions">
                     <button class="btn-save" id="btnSave">Save Bake</button>
                     <button class="btn-cancel" id="btnCancel">Cancel</button>
@@ -691,7 +831,22 @@
         <div class="lightbox-info">
             <h3 id="lightboxName"></h3>
             <p id="lightboxNotes"></p>
+            <button class="lightbox-edit-btn" id="lightboxEditBtn">Edit Image</button>
         </div>
+    </div>
+
+    <div class="image-editor-modal" id="imageEditorModal">
+        <canvas id="modalEditorCanvas"></canvas>
+        <div class="editor-tools">
+            <button type="button" id="modalRotateLeft">Rotate Left</button>
+            <button type="button" id="modalRotateRight">Rotate Right</button>
+            <button type="button" id="modalCrop">Crop</button>
+            <button type="button" id="modalApplyCrop" style="display:none">Apply Crop</button>
+            <button type="button" id="modalReset">Reset</button>
+            <button type="button" id="modalSave" style="background:#5c4033;color:#faf7f2;border-color:#5c4033">Save</button>
+            <button type="button" id="modalCancel">Cancel</button>
+        </div>
+        <p class="crop-hint" id="modalCropHint">Click and drag to select crop area</p>
     </div>
 
     <footer>
@@ -716,9 +871,11 @@
         const lightboxName = document.getElementById('lightboxName');
         const lightboxNotes = document.getElementById('lightboxNotes');
         const lightboxClose = document.getElementById('lightboxClose');
+        const lightboxEditBtn = document.getElementById('lightboxEditBtn');
 
         let bakes = [];
         let token = null;
+        let currentEditIndex = -1;
 
         if (isAdmin) {
             document.body.classList.add('admin-mode');
@@ -729,6 +886,252 @@
             }
         }
 
+        // --- Image Editor Class ---
+        class ImageEditor {
+            constructor(canvas, cropHint) {
+                this.canvas = canvas;
+                this.ctx = canvas.getContext('2d');
+                this.cropHint = cropHint;
+                this.originalImg = null;
+                this.currentImg = null;
+                this.rotation = 0;
+                this.cropping = false;
+                this.cropStart = null;
+                this.cropEnd = null;
+                this.dragging = false;
+                this.setupEvents();
+            }
+
+            setupEvents() {
+                this.canvas.addEventListener('mousedown', (e) => {
+                    if (!this.cropping) return;
+                    const rect = this.canvas.getBoundingClientRect();
+                    this.cropStart = { x: e.clientX - rect.left, y: e.clientY - rect.top };
+                    this.cropEnd = null;
+                    this.dragging = true;
+                });
+                this.canvas.addEventListener('mousemove', (e) => {
+                    if (!this.dragging) return;
+                    const rect = this.canvas.getBoundingClientRect();
+                    this.cropEnd = { x: e.clientX - rect.left, y: e.clientY - rect.top };
+                    this.drawWithCrop();
+                });
+                this.canvas.addEventListener('mouseup', () => { this.dragging = false; });
+
+                this.canvas.addEventListener('touchstart', (e) => {
+                    if (!this.cropping) return;
+                    e.preventDefault();
+                    const rect = this.canvas.getBoundingClientRect();
+                    const t = e.touches[0];
+                    this.cropStart = { x: t.clientX - rect.left, y: t.clientY - rect.top };
+                    this.cropEnd = null;
+                    this.dragging = true;
+                });
+                this.canvas.addEventListener('touchmove', (e) => {
+                    if (!this.dragging) return;
+                    e.preventDefault();
+                    const rect = this.canvas.getBoundingClientRect();
+                    const t = e.touches[0];
+                    this.cropEnd = { x: t.clientX - rect.left, y: t.clientY - rect.top };
+                    this.drawWithCrop();
+                });
+                this.canvas.addEventListener('touchend', () => { this.dragging = false; });
+            }
+
+            loadImage(src) {
+                return new Promise((resolve) => {
+                    const img = new Image();
+                    img.crossOrigin = 'anonymous';
+                    img.onload = () => {
+                        this.originalImg = img;
+                        this.currentImg = img;
+                        this.rotation = 0;
+                        this.draw();
+                        resolve();
+                    };
+                    img.src = src;
+                });
+            }
+
+            draw() {
+                const img = this.currentImg;
+                const maxW = Math.min(500, window.innerWidth - 80);
+                const scale = Math.min(maxW / img.width, 400 / img.height, 1);
+                this.canvas.width = img.width * scale;
+                this.canvas.height = img.height * scale;
+                this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+                this.ctx.drawImage(img, 0, 0, this.canvas.width, this.canvas.height);
+                this.scale = scale;
+            }
+
+            drawWithCrop() {
+                this.draw();
+                if (this.cropStart && this.cropEnd) {
+                    const x = Math.min(this.cropStart.x, this.cropEnd.x);
+                    const y = Math.min(this.cropStart.y, this.cropEnd.y);
+                    const w = Math.abs(this.cropEnd.x - this.cropStart.x);
+                    const h = Math.abs(this.cropEnd.y - this.cropStart.y);
+                    this.ctx.fillStyle = 'rgba(0,0,0,0.4)';
+                    this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+                    this.ctx.clearRect(x, y, w, h);
+                    this.ctx.drawImage(this.currentImg, x / this.scale, y / this.scale, w / this.scale, h / this.scale, x, y, w, h);
+                    this.ctx.strokeStyle = '#d4a574';
+                    this.ctx.lineWidth = 2;
+                    this.ctx.strokeRect(x, y, w, h);
+                }
+            }
+
+            rotate(degrees) {
+                this.rotation = (this.rotation + degrees) % 360;
+                const img = this.currentImg;
+                const tempCanvas = document.createElement('canvas');
+                const tempCtx = tempCanvas.getContext('2d');
+                if (Math.abs(degrees) === 90) {
+                    tempCanvas.width = img.height;
+                    tempCanvas.height = img.width;
+                } else {
+                    tempCanvas.width = img.width;
+                    tempCanvas.height = img.height;
+                }
+                tempCtx.translate(tempCanvas.width / 2, tempCanvas.height / 2);
+                tempCtx.rotate(degrees * Math.PI / 180);
+                tempCtx.drawImage(img, -img.width / 2, -img.height / 2);
+                const newImg = new Image();
+                newImg.onload = () => {
+                    this.currentImg = newImg;
+                    this.draw();
+                };
+                newImg.src = tempCanvas.toDataURL('image/jpeg', 0.9);
+            }
+
+            startCrop() {
+                this.cropping = true;
+                this.cropStart = null;
+                this.cropEnd = null;
+                if (this.cropHint) this.cropHint.classList.add('visible');
+            }
+
+            applyCrop() {
+                if (!this.cropStart || !this.cropEnd) return;
+                const x = Math.min(this.cropStart.x, this.cropEnd.x) / this.scale;
+                const y = Math.min(this.cropStart.y, this.cropEnd.y) / this.scale;
+                const w = Math.abs(this.cropEnd.x - this.cropStart.x) / this.scale;
+                const h = Math.abs(this.cropEnd.y - this.cropStart.y) / this.scale;
+                if (w < 10 || h < 10) return;
+
+                const tempCanvas = document.createElement('canvas');
+                tempCanvas.width = w;
+                tempCanvas.height = h;
+                const tempCtx = tempCanvas.getContext('2d');
+                tempCtx.drawImage(this.currentImg, x, y, w, h, 0, 0, w, h);
+                const newImg = new Image();
+                newImg.onload = () => {
+                    this.currentImg = newImg;
+                    this.cropping = false;
+                    this.cropStart = null;
+                    this.cropEnd = null;
+                    if (this.cropHint) this.cropHint.classList.remove('visible');
+                    this.draw();
+                };
+                newImg.src = tempCanvas.toDataURL('image/jpeg', 0.9);
+            }
+
+            reset() {
+                this.currentImg = this.originalImg;
+                this.rotation = 0;
+                this.cropping = false;
+                this.cropStart = null;
+                this.cropEnd = null;
+                if (this.cropHint) this.cropHint.classList.remove('visible');
+                this.draw();
+            }
+
+            getImageBase64() {
+                const tempCanvas = document.createElement('canvas');
+                tempCanvas.width = this.currentImg.width;
+                tempCanvas.height = this.currentImg.height;
+                const tempCtx = tempCanvas.getContext('2d');
+                tempCtx.drawImage(this.currentImg, 0, 0);
+                return tempCanvas.toDataURL('image/jpeg', 0.85).split(',')[1];
+            }
+        }
+
+        // --- Form Editor ---
+        const formEditor = new ImageEditor(
+            document.getElementById('editorCanvas'),
+            document.getElementById('cropHint')
+        );
+        const imgEditorDiv = document.getElementById('imgEditor');
+
+        document.getElementById('btnRotateLeft').addEventListener('click', () => formEditor.rotate(-90));
+        document.getElementById('btnRotateRight').addEventListener('click', () => formEditor.rotate(90));
+        document.getElementById('btnCrop').addEventListener('click', () => {
+            formEditor.startCrop();
+            document.getElementById('btnApplyCrop').style.display = 'inline-block';
+        });
+        document.getElementById('btnApplyCrop').addEventListener('click', () => {
+            formEditor.applyCrop();
+            document.getElementById('btnApplyCrop').style.display = 'none';
+        });
+        document.getElementById('btnResetEdit').addEventListener('click', () => {
+            formEditor.reset();
+            document.getElementById('btnApplyCrop').style.display = 'none';
+        });
+
+        // --- Modal Editor (for existing bakes) ---
+        const modalEditor = new ImageEditor(
+            document.getElementById('modalEditorCanvas'),
+            document.getElementById('modalCropHint')
+        );
+        const editorModal = document.getElementById('imageEditorModal');
+
+        document.getElementById('modalRotateLeft').addEventListener('click', () => modalEditor.rotate(-90));
+        document.getElementById('modalRotateRight').addEventListener('click', () => modalEditor.rotate(90));
+        document.getElementById('modalCrop').addEventListener('click', () => {
+            modalEditor.startCrop();
+            document.getElementById('modalApplyCrop').style.display = 'inline-block';
+        });
+        document.getElementById('modalApplyCrop').addEventListener('click', () => {
+            modalEditor.applyCrop();
+            document.getElementById('modalApplyCrop').style.display = 'none';
+        });
+        document.getElementById('modalReset').addEventListener('click', () => {
+            modalEditor.reset();
+            document.getElementById('modalApplyCrop').style.display = 'none';
+        });
+        document.getElementById('modalCancel').addEventListener('click', () => {
+            editorModal.classList.remove('visible');
+        });
+        document.getElementById('modalSave').addEventListener('click', async () => {
+            if (currentEditIndex < 0) return;
+            const btn = document.getElementById('modalSave');
+            btn.textContent = 'Saving...';
+            btn.disabled = true;
+            try {
+                const imgBase64 = modalEditor.getImageBase64();
+                const imgFileName = `images/${Date.now()}.jpg`;
+                await uploadFile(imgFileName, imgBase64, `Edit image: ${bakes[currentEditIndex].name}`);
+                bakes[currentEditIndex].image = `https://raw.githubusercontent.com/${REPO}/main/${imgFileName}`;
+                await saveBakesJson();
+                renderBakes();
+                editorModal.classList.remove('visible');
+                lightbox.classList.remove('visible');
+            } catch (e) {
+                alert('Error saving: ' + e.message);
+            }
+            btn.textContent = 'Save';
+            btn.disabled = false;
+        });
+
+        // --- Lightbox ---
+        lightboxEditBtn.addEventListener('click', async () => {
+            if (currentEditIndex < 0) return;
+            lightbox.classList.remove('visible');
+            editorModal.classList.add('visible');
+            await modalEditor.loadImage(bakes[currentEditIndex].image);
+        });
+
+        // --- Main Logic ---
         async function loadBakes() {
             try {
                 const res = await fetch(`https://raw.githubusercontent.com/${REPO}/main/${BAKES_FILE}?t=${Date.now()}`);
@@ -753,8 +1156,8 @@
                         <p class="bake-date ${isAdmin ? 'bake-date-editable' : ''}" data-index="${index}">${bake.date}</p>
                     </div>
                 `;
-                li.querySelector('img').addEventListener('click', () => openLightbox(bake));
-                li.querySelector('h3').addEventListener('click', () => openLightbox(bake));
+                li.querySelector('img').addEventListener('click', () => openLightbox(bake, index));
+                li.querySelector('h3').addEventListener('click', () => openLightbox(bake, index));
                 grid.appendChild(li);
             });
 
@@ -773,10 +1176,11 @@
             }
         }
 
-        function openLightbox(bake) {
+        function openLightbox(bake, index) {
             lightboxImg.src = bake.image;
             lightboxName.textContent = bake.name;
             lightboxNotes.textContent = bake.notes + ' — ' + bake.date;
+            currentEditIndex = index;
             lightbox.classList.add('visible');
         }
 
@@ -785,7 +1189,10 @@
             if (e.target === lightbox) lightbox.classList.remove('visible');
         });
         document.addEventListener('keydown', (e) => {
-            if (e.key === 'Escape') lightbox.classList.remove('visible');
+            if (e.key === 'Escape') {
+                lightbox.classList.remove('visible');
+                editorModal.classList.remove('visible');
+            }
         });
 
         addBtn.addEventListener('click', () => {
@@ -806,6 +1213,8 @@
                 reader.onload = (ev) => {
                     preview.src = ev.target.result;
                     preview.style.display = 'block';
+                    imgEditorDiv.classList.add('visible');
+                    formEditor.loadImage(ev.target.result);
                 };
                 reader.readAsDataURL(file);
             }
@@ -826,9 +1235,8 @@
             saveBtn.textContent = 'Saving...';
 
             try {
-                const imgBase64 = await fileToBase64(file);
-                const ext = file.name.split('.').pop();
-                const imgFileName = `images/${Date.now()}.${ext}`;
+                const imgBase64 = formEditor.getImageBase64();
+                const imgFileName = `images/${Date.now()}.jpg`;
 
                 await uploadFile(imgFileName, imgBase64, `Add image: ${name}`);
 
@@ -856,6 +1264,8 @@
             document.getElementById('bakeDate').value = '';
             imageInput.value = '';
             preview.style.display = 'none';
+            imgEditorDiv.classList.remove('visible');
+            document.getElementById('btnApplyCrop').style.display = 'none';
         }
 
         function fileToBase64(file) {
