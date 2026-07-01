@@ -1250,7 +1250,9 @@
             if (bakes.length > 0 || isAdmin) {
                 section.classList.remove('hidden');
             }
-            bakes.forEach((bake, index) => {
+            const sorted = bakes.map((b, i) => ({...b, _i: i})).sort((a, b) => b._i - a._i);
+            sorted.forEach(bake => {
+                const index = bake._i;
                 const li = document.createElement('li');
                 li.className = 'bake-card';
                 li.innerHTML = `
