@@ -164,10 +164,74 @@
             box-shadow: 0 6px 20px rgba(0, 0, 0, 0.12);
         }
 
+        .bake-card {
+            cursor: pointer;
+        }
+
         .bake-card img {
             width: 100%;
             height: 200px;
             object-fit: cover;
+        }
+
+        .lightbox {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.85);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+            padding: 2rem;
+        }
+
+        .lightbox.visible {
+            display: flex;
+        }
+
+        .lightbox img {
+            max-width: 90%;
+            max-height: 70vh;
+            border-radius: 12px;
+            object-fit: contain;
+        }
+
+        .lightbox-info {
+            color: #faf7f2;
+            text-align: center;
+            margin-top: 1rem;
+            max-width: 600px;
+        }
+
+        .lightbox-info h3 {
+            font-size: 1.3rem;
+            margin-bottom: 0.3rem;
+        }
+
+        .lightbox-info p {
+            font-size: 0.95rem;
+            color: #d4a574;
+        }
+
+        .lightbox-close {
+            position: absolute;
+            top: 1.5rem;
+            right: 2rem;
+            color: #faf7f2;
+            font-size: 2rem;
+            cursor: pointer;
+            background: none;
+            border: none;
+            font-family: 'Georgia', serif;
+        }
+
+        .bake-date-editable {
+            cursor: pointer;
+            border-bottom: 1px dashed #d4a574;
         }
 
         .bake-card .bake-info {
@@ -387,6 +451,8 @@
                 <input type="text" id="bakeName" placeholder="e.g. Sourdough Focaccia">
                 <label for="bakeNotes">Notes</label>
                 <textarea id="bakeNotes" placeholder="How did it turn out? Any tips for next time?"></textarea>
+                <label for="bakeDate">Date</label>
+                <input type="text" id="bakeDate" placeholder="e.g. July 2026">
                 <label for="bakeImage">Photo</label>
                 <input type="file" id="bakeImage" accept="image/*">
                 <img class="img-preview" id="imgPreview">
@@ -619,6 +685,15 @@
         </ul>
     </main>
 
+    <div class="lightbox" id="lightbox">
+        <button class="lightbox-close" id="lightboxClose">&times;</button>
+        <img id="lightboxImg" src="" alt="">
+        <div class="lightbox-info">
+            <h3 id="lightboxName"></h3>
+            <p id="lightboxNotes"></p>
+        </div>
+    </div>
+
     <footer>
         <p>&copy; 2026 Nazanin's Kitchen</p>
     </footer>
@@ -636,6 +711,11 @@
         const cancelBtn = document.getElementById('btnCancel');
         const imageInput = document.getElementById('bakeImage');
         const preview = document.getElementById('imgPreview');
+        const lightbox = document.getElementById('lightbox');
+        const lightboxImg = document.getElementById('lightboxImg');
+        const lightboxName = document.getElementById('lightboxName');
+        const lightboxNotes = document.getElementById('lightboxNotes');
+        const lightboxClose = document.getElementById('lightboxClose');
 
         let bakes = [];
         let token = null;
@@ -662,7 +742,7 @@
             if (bakes.length > 0 || isAdmin) {
                 section.classList.remove('hidden');
             }
-            bakes.forEach(bake => {
+            bakes.forEach((bake, index) => {
                 const li = document.createElement('li');
                 li.className = 'bake-card';
                 li.innerHTML = `
@@ -670,12 +750,43 @@
                     <div class="bake-info">
                         <h3>${bake.name}</h3>
                         <p>${bake.notes}</p>
-                        <p class="bake-date">${bake.date}</p>
+                        <p class="bake-date ${isAdmin ? 'bake-date-editable' : ''}" data-index="${index}">${bake.date}</p>
                     </div>
                 `;
+                li.querySelector('img').addEventListener('click', () => openLightbox(bake));
+                li.querySelector('h3').addEventListener('click', () => openLightbox(bake));
                 grid.appendChild(li);
             });
+
+            if (isAdmin) {
+                grid.querySelectorAll('.bake-date-editable').forEach(el => {
+                    el.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        const index = parseInt(el.dataset.index);
+                        const newDate = prompt('Edit date:', bakes[index].date);
+                        if (newDate !== null && newDate.trim() !== '') {
+                            bakes[index].date = newDate.trim();
+                            saveBakesJson().then(() => renderBakes());
+                        }
+                    });
+                });
+            }
         }
+
+        function openLightbox(bake) {
+            lightboxImg.src = bake.image;
+            lightboxName.textContent = bake.name;
+            lightboxNotes.textContent = bake.notes + ' — ' + bake.date;
+            lightbox.classList.add('visible');
+        }
+
+        lightboxClose.addEventListener('click', () => lightbox.classList.remove('visible'));
+        lightbox.addEventListener('click', (e) => {
+            if (e.target === lightbox) lightbox.classList.remove('visible');
+        });
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') lightbox.classList.remove('visible');
+        });
 
         addBtn.addEventListener('click', () => {
             form.classList.add('visible');
@@ -703,6 +814,7 @@
         saveBtn.addEventListener('click', async () => {
             const name = document.getElementById('bakeName').value.trim();
             const notes = document.getElementById('bakeNotes').value.trim();
+            const date = document.getElementById('bakeDate').value.trim();
             const file = imageInput.files[0];
 
             if (!name || !file) {
@@ -721,10 +833,9 @@
                 await uploadFile(imgFileName, imgBase64, `Add image: ${name}`);
 
                 const imageUrl = `https://raw.githubusercontent.com/${REPO}/main/${imgFileName}`;
-                const now = new Date();
-                const date = now.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+                const finalDate = date || new Date().toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
 
-                bakes.push({ name, notes, image: imageUrl, date });
+                bakes.push({ name, notes, image: imageUrl, date: finalDate });
 
                 await saveBakesJson();
                 renderBakes();
@@ -742,6 +853,7 @@
         function resetForm() {
             document.getElementById('bakeName').value = '';
             document.getElementById('bakeNotes').value = '';
+            document.getElementById('bakeDate').value = '';
             imageInput.value = '';
             preview.style.display = 'none';
         }
