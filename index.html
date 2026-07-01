@@ -612,7 +612,7 @@
                         <button type="button" id="btnApplyCrop" style="display:none">Apply Crop</button>
                         <button type="button" id="btnResetEdit">Reset</button>
                     </div>
-                    <p class="crop-hint" id="cropHint">Click and drag on the image to select crop area</p>
+                    <p class="crop-hint" id="cropHint">Drag the handles to crop, then click Apply Crop</p>
                 </div>
                 <div class="form-actions">
                     <button class="btn-save" id="btnSave">Save Bake</button>
@@ -864,7 +864,7 @@
             <button type="button" id="modalSave" style="background:#5c4033;color:#faf7f2;border-color:#5c4033">Save</button>
             <button type="button" id="modalCancel">Cancel</button>
         </div>
-        <p class="crop-hint" id="modalCropHint">Click and drag to select crop area</p>
+        <p class="crop-hint" id="modalCropHint">Drag the handles to crop, then click Apply Crop</p>
     </div>
 
     <footer>
@@ -933,24 +933,65 @@
             }
 
             setupEvents() {
+                const HANDLE_SIZE = 14;
+
+                const getHandle = (pos) => {
+                    const c = this.cropBox;
+                    if (!c) return null;
+                    const handles = [
+                        {id: 'tl', x: c.x, y: c.y},
+                        {id: 'tr', x: c.x + c.w, y: c.y},
+                        {id: 'bl', x: c.x, y: c.y + c.h},
+                        {id: 'br', x: c.x + c.w, y: c.y + c.h},
+                        {id: 't', x: c.x + c.w/2, y: c.y},
+                        {id: 'b', x: c.x + c.w/2, y: c.y + c.h},
+                        {id: 'l', x: c.x, y: c.y + c.h/2},
+                        {id: 'r', x: c.x + c.w, y: c.y + c.h/2},
+                    ];
+                    for (const h of handles) {
+                        if (Math.abs(pos.x - h.x) < HANDLE_SIZE && Math.abs(pos.y - h.y) < HANDLE_SIZE) return h.id;
+                    }
+                    return null;
+                };
+
                 const onStart = (e) => {
                     if (!this.cropping) return;
                     if (e.touches) e.preventDefault();
-                    this.cropStart = this.getPos(e);
-                    this.cropEnd = null;
-                    this.dragging = true;
+                    const pos = this.getPos(e);
+                    this.activeHandle = getHandle(pos);
+                    if (this.activeHandle) {
+                        this.dragging = true;
+                    }
                 };
                 const onMove = (e) => {
-                    if (!this.dragging) return;
+                    if (!this.dragging || !this.activeHandle) return;
                     if (e.touches) e.preventDefault();
-                    this.cropEnd = this.getPos(e);
+                    const pos = this.getPos(e);
+                    const c = this.cropBox;
+                    const MIN = 30;
+
+                    switch(this.activeHandle) {
+                        case 'tl': c.w += c.x - pos.x; c.h += c.y - pos.y; c.x = pos.x; c.y = pos.y; break;
+                        case 'tr': c.w = pos.x - c.x; c.h += c.y - pos.y; c.y = pos.y; break;
+                        case 'bl': c.w += c.x - pos.x; c.x = pos.x; c.h = pos.y - c.y; break;
+                        case 'br': c.w = pos.x - c.x; c.h = pos.y - c.y; break;
+                        case 't': c.h += c.y - pos.y; c.y = pos.y; break;
+                        case 'b': c.h = pos.y - c.y; break;
+                        case 'l': c.w += c.x - pos.x; c.x = pos.x; break;
+                        case 'r': c.w = pos.x - c.x; break;
+                    }
+                    c.x = Math.max(0, c.x);
+                    c.y = Math.max(0, c.y);
+                    c.w = Math.max(MIN, Math.min(c.w, this.canvas.width - c.x));
+                    c.h = Math.max(MIN, Math.min(c.h, this.canvas.height - c.y));
                     this.drawWithCrop();
                 };
-                const onEnd = () => { this.dragging = false; };
+                const onEnd = () => { this.dragging = false; this.activeHandle = null; };
 
                 this.canvas.addEventListener('mousedown', onStart);
                 this.canvas.addEventListener('mousemove', onMove);
                 this.canvas.addEventListener('mouseup', onEnd);
+                this.canvas.addEventListener('mouseleave', onEnd);
                 this.canvas.addEventListener('touchstart', onStart, {passive: false});
                 this.canvas.addEventListener('touchmove', onMove, {passive: false});
                 this.canvas.addEventListener('touchend', onEnd);
@@ -984,22 +1025,66 @@
 
             drawWithCrop() {
                 this.draw();
-                if (this.cropStart && this.cropEnd) {
-                    const x = Math.min(this.cropStart.x, this.cropEnd.x);
-                    const y = Math.min(this.cropStart.y, this.cropEnd.y);
-                    const w = Math.abs(this.cropEnd.x - this.cropStart.x);
-                    const h = Math.abs(this.cropEnd.y - this.cropStart.y);
-                    this.ctx.fillStyle = 'rgba(0,0,0,0.4)';
-                    this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
-                    const sx = x / this.scale, sy = y / this.scale;
-                    const sw = w / this.scale, sh = h / this.scale;
-                    this.ctx.drawImage(this.currentImg, sx, sy, sw, sh, x, y, w, h);
-                    this.ctx.strokeStyle = '#d4a574';
-                    this.ctx.lineWidth = 2;
-                    this.ctx.setLineDash([6, 3]);
-                    this.ctx.strokeRect(x, y, w, h);
-                    this.ctx.setLineDash([]);
+                const c = this.cropBox;
+                if (!c) return;
+
+                // Darken outside area
+                this.ctx.fillStyle = 'rgba(0,0,0,0.5)';
+                this.ctx.fillRect(0, 0, this.canvas.width, c.y); // top
+                this.ctx.fillRect(0, c.y + c.h, this.canvas.width, this.canvas.height - c.y - c.h); // bottom
+                this.ctx.fillRect(0, c.y, c.x, c.h); // left
+                this.ctx.fillRect(c.x + c.w, c.y, this.canvas.width - c.x - c.w, c.h); // right
+
+                // Redraw visible area
+                const sx = c.x / this.scale, sy = c.y / this.scale;
+                const sw = c.w / this.scale, sh = c.h / this.scale;
+                this.ctx.drawImage(this.currentImg, sx, sy, sw, sh, c.x, c.y, c.w, c.h);
+
+                // Border
+                this.ctx.strokeStyle = '#fff';
+                this.ctx.lineWidth = 2;
+                this.ctx.strokeRect(c.x, c.y, c.w, c.h);
+
+                // Grid lines (rule of thirds)
+                this.ctx.strokeStyle = 'rgba(255,255,255,0.4)';
+                this.ctx.lineWidth = 1;
+                for (let i = 1; i <= 2; i++) {
+                    this.ctx.beginPath();
+                    this.ctx.moveTo(c.x + c.w * i / 3, c.y);
+                    this.ctx.lineTo(c.x + c.w * i / 3, c.y + c.h);
+                    this.ctx.stroke();
+                    this.ctx.beginPath();
+                    this.ctx.moveTo(c.x, c.y + c.h * i / 3);
+                    this.ctx.lineTo(c.x + c.w, c.y + c.h * i / 3);
+                    this.ctx.stroke();
                 }
+
+                // Handles — thick white lines at corners and edges
+                const HL = 16;
+                this.ctx.strokeStyle = '#fff';
+                this.ctx.lineWidth = 4;
+
+                // Corners
+                // Top-left
+                this.ctx.beginPath(); this.ctx.moveTo(c.x, c.y + HL); this.ctx.lineTo(c.x, c.y); this.ctx.lineTo(c.x + HL, c.y); this.ctx.stroke();
+                // Top-right
+                this.ctx.beginPath(); this.ctx.moveTo(c.x + c.w - HL, c.y); this.ctx.lineTo(c.x + c.w, c.y); this.ctx.lineTo(c.x + c.w, c.y + HL); this.ctx.stroke();
+                // Bottom-left
+                this.ctx.beginPath(); this.ctx.moveTo(c.x, c.y + c.h - HL); this.ctx.lineTo(c.x, c.y + c.h); this.ctx.lineTo(c.x + HL, c.y + c.h); this.ctx.stroke();
+                // Bottom-right
+                this.ctx.beginPath(); this.ctx.moveTo(c.x + c.w - HL, c.y + c.h); this.ctx.lineTo(c.x + c.w, c.y + c.h); this.ctx.lineTo(c.x + c.w, c.y + c.h - HL); this.ctx.stroke();
+
+                // Edge midpoints (short thick lines)
+                this.ctx.lineWidth = 4;
+                const midX = c.x + c.w / 2, midY = c.y + c.h / 2;
+                // Top
+                this.ctx.beginPath(); this.ctx.moveTo(midX - HL/2, c.y); this.ctx.lineTo(midX + HL/2, c.y); this.ctx.stroke();
+                // Bottom
+                this.ctx.beginPath(); this.ctx.moveTo(midX - HL/2, c.y + c.h); this.ctx.lineTo(midX + HL/2, c.y + c.h); this.ctx.stroke();
+                // Left
+                this.ctx.beginPath(); this.ctx.moveTo(c.x, midY - HL/2); this.ctx.lineTo(c.x, midY + HL/2); this.ctx.stroke();
+                // Right
+                this.ctx.beginPath(); this.ctx.moveTo(c.x + c.w, midY - HL/2); this.ctx.lineTo(c.x + c.w, midY + HL/2); this.ctx.stroke();
             }
 
             rotate(degrees) {
@@ -1027,17 +1112,18 @@
 
             startCrop() {
                 this.cropping = true;
-                this.cropStart = null;
-                this.cropEnd = null;
+                this.cropBox = { x: 20, y: 20, w: this.canvas.width - 40, h: this.canvas.height - 40 };
                 if (this.cropHint) this.cropHint.classList.add('visible');
+                this.drawWithCrop();
             }
 
             applyCrop() {
-                if (!this.cropStart || !this.cropEnd) return;
-                const x = Math.min(this.cropStart.x, this.cropEnd.x) / this.scale;
-                const y = Math.min(this.cropStart.y, this.cropEnd.y) / this.scale;
-                const w = Math.abs(this.cropEnd.x - this.cropStart.x) / this.scale;
-                const h = Math.abs(this.cropEnd.y - this.cropStart.y) / this.scale;
+                const c = this.cropBox;
+                if (!c) return;
+                const x = c.x / this.scale;
+                const y = c.y / this.scale;
+                const w = c.w / this.scale;
+                const h = c.h / this.scale;
                 if (w < 10 || h < 10) return;
 
                 const tempCanvas = document.createElement('canvas');
@@ -1049,8 +1135,7 @@
                 newImg.onload = () => {
                     this.currentImg = newImg;
                     this.cropping = false;
-                    this.cropStart = null;
-                    this.cropEnd = null;
+                    this.cropBox = null;
                     if (this.cropHint) this.cropHint.classList.remove('visible');
                     this.draw();
                 };
@@ -1061,8 +1146,7 @@
                 this.currentImg = this.originalImg;
                 this.rotation = 0;
                 this.cropping = false;
-                this.cropStart = null;
-                this.cropEnd = null;
+                this.cropBox = null;
                 if (this.cropHint) this.cropHint.classList.remove('visible');
                 this.draw();
             }
