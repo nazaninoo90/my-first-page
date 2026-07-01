@@ -920,40 +920,40 @@
                 this.setupEvents();
             }
 
-            setupEvents() {
-                this.canvas.addEventListener('mousedown', (e) => {
-                    if (!this.cropping) return;
-                    const rect = this.canvas.getBoundingClientRect();
-                    this.cropStart = { x: e.clientX - rect.left, y: e.clientY - rect.top };
-                    this.cropEnd = null;
-                    this.dragging = true;
-                });
-                this.canvas.addEventListener('mousemove', (e) => {
-                    if (!this.dragging) return;
-                    const rect = this.canvas.getBoundingClientRect();
-                    this.cropEnd = { x: e.clientX - rect.left, y: e.clientY - rect.top };
-                    this.drawWithCrop();
-                });
-                this.canvas.addEventListener('mouseup', () => { this.dragging = false; });
+            getPos(e) {
+                const rect = this.canvas.getBoundingClientRect();
+                const scaleX = this.canvas.width / rect.width;
+                const scaleY = this.canvas.height / rect.height;
+                const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+                const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+                return {
+                    x: (clientX - rect.left) * scaleX,
+                    y: (clientY - rect.top) * scaleY
+                };
+            }
 
-                this.canvas.addEventListener('touchstart', (e) => {
+            setupEvents() {
+                const onStart = (e) => {
                     if (!this.cropping) return;
-                    e.preventDefault();
-                    const rect = this.canvas.getBoundingClientRect();
-                    const t = e.touches[0];
-                    this.cropStart = { x: t.clientX - rect.left, y: t.clientY - rect.top };
+                    if (e.touches) e.preventDefault();
+                    this.cropStart = this.getPos(e);
                     this.cropEnd = null;
                     this.dragging = true;
-                });
-                this.canvas.addEventListener('touchmove', (e) => {
+                };
+                const onMove = (e) => {
                     if (!this.dragging) return;
-                    e.preventDefault();
-                    const rect = this.canvas.getBoundingClientRect();
-                    const t = e.touches[0];
-                    this.cropEnd = { x: t.clientX - rect.left, y: t.clientY - rect.top };
+                    if (e.touches) e.preventDefault();
+                    this.cropEnd = this.getPos(e);
                     this.drawWithCrop();
-                });
-                this.canvas.addEventListener('touchend', () => { this.dragging = false; });
+                };
+                const onEnd = () => { this.dragging = false; };
+
+                this.canvas.addEventListener('mousedown', onStart);
+                this.canvas.addEventListener('mousemove', onMove);
+                this.canvas.addEventListener('mouseup', onEnd);
+                this.canvas.addEventListener('touchstart', onStart, {passive: false});
+                this.canvas.addEventListener('touchmove', onMove, {passive: false});
+                this.canvas.addEventListener('touchend', onEnd);
             }
 
             loadImage(src) {
@@ -991,11 +991,14 @@
                     const h = Math.abs(this.cropEnd.y - this.cropStart.y);
                     this.ctx.fillStyle = 'rgba(0,0,0,0.4)';
                     this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
-                    this.ctx.clearRect(x, y, w, h);
-                    this.ctx.drawImage(this.currentImg, x / this.scale, y / this.scale, w / this.scale, h / this.scale, x, y, w, h);
+                    const sx = x / this.scale, sy = y / this.scale;
+                    const sw = w / this.scale, sh = h / this.scale;
+                    this.ctx.drawImage(this.currentImg, sx, sy, sw, sh, x, y, w, h);
                     this.ctx.strokeStyle = '#d4a574';
                     this.ctx.lineWidth = 2;
+                    this.ctx.setLineDash([6, 3]);
                     this.ctx.strokeRect(x, y, w, h);
+                    this.ctx.setLineDash([]);
                 }
             }
 
@@ -1181,33 +1184,36 @@
 
             if (isAdmin) {
                 grid.querySelectorAll('.bake-date-editable').forEach(el => {
-                    el.addEventListener('click', (e) => {
+                    el.onclick = function(e) {
+                        e.preventDefault();
                         e.stopPropagation();
-                        const index = parseInt(el.dataset.index);
+                        e.stopImmediatePropagation();
+                        const index = parseInt(this.dataset.index);
                         const currentDate = bakes[index].date;
                         const input = document.createElement('input');
                         input.type = 'text';
                         input.className = 'bake-date-input';
                         input.value = currentDate;
-                        el.replaceWith(input);
+                        this.style.display = 'none';
+                        this.parentNode.appendChild(input);
                         input.focus();
                         input.select();
 
-                        const save = () => {
+                        input.onblur = () => {
                             const newDate = input.value.trim();
                             if (newDate && newDate !== currentDate) {
                                 bakes[index].date = newDate;
                                 saveBakesJson().then(() => renderBakes());
                             } else {
-                                renderBakes();
+                                input.remove();
+                                el.style.display = '';
                             }
                         };
-                        input.addEventListener('blur', save);
-                        input.addEventListener('keydown', (ev) => {
-                            if (ev.key === 'Enter') { input.blur(); }
+                        input.onkeydown = (ev) => {
+                            if (ev.key === 'Enter') input.blur();
                             if (ev.key === 'Escape') { input.value = currentDate; input.blur(); }
-                        });
-                    });
+                        };
+                    };
                 });
             }
         }
