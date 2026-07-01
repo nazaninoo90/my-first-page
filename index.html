@@ -137,7 +137,11 @@
         }
 
         .my-bakes-section {
-            margin-top: 3rem;
+            margin-bottom: 2rem;
+        }
+
+        .my-bakes-section.hidden {
+            display: none;
         }
 
         .my-bakes-grid {
@@ -187,21 +191,112 @@
             margin-top: 0.4rem;
         }
 
-        .placeholder-card {
-            border: 2px dashed #d4a574;
-            background: #fdf8f2;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            min-height: 280px;
-            border-radius: 12px;
+        .add-bake-btn {
+            display: none;
+            background: #5c4033;
+            color: #faf7f2;
+            border: none;
+            padding: 0.8rem 1.5rem;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-family: 'Georgia', serif;
+            cursor: pointer;
+            margin-bottom: 1.5rem;
+            transition: background 0.2s;
         }
 
-        .placeholder-card p {
-            color: #a08c7a;
-            font-size: 0.95rem;
-            text-align: center;
+        .add-bake-btn:hover {
+            background: #7a5a4a;
+        }
+
+        .admin-mode .add-bake-btn {
+            display: inline-block;
+        }
+
+        .bake-form {
+            display: none;
+            background: #fff;
+            border-radius: 12px;
             padding: 1.5rem;
+            margin-bottom: 1.5rem;
+            box-shadow: 0 3px 12px rgba(0, 0, 0, 0.08);
+        }
+
+        .bake-form.visible {
+            display: block;
+        }
+
+        .bake-form label {
+            display: block;
+            font-size: 0.9rem;
+            color: #5c4033;
+            margin-bottom: 0.3rem;
+            margin-top: 1rem;
+        }
+
+        .bake-form label:first-child {
+            margin-top: 0;
+        }
+
+        .bake-form input[type="text"],
+        .bake-form textarea {
+            width: 100%;
+            padding: 0.6rem 0.8rem;
+            border: 1px solid #d4a574;
+            border-radius: 6px;
+            font-family: 'Georgia', serif;
+            font-size: 0.9rem;
+        }
+
+        .bake-form textarea {
+            height: 80px;
+            resize: vertical;
+        }
+
+        .bake-form input[type="file"] {
+            margin-top: 0.3rem;
+        }
+
+        .bake-form .form-actions {
+            margin-top: 1.2rem;
+            display: flex;
+            gap: 0.8rem;
+        }
+
+        .bake-form .form-actions button {
+            padding: 0.6rem 1.2rem;
+            border-radius: 6px;
+            border: none;
+            font-family: 'Georgia', serif;
+            font-size: 0.9rem;
+            cursor: pointer;
+        }
+
+        .bake-form .btn-save {
+            background: #5c4033;
+            color: #faf7f2;
+        }
+
+        .bake-form .btn-save:hover {
+            background: #7a5a4a;
+        }
+
+        .bake-form .btn-cancel {
+            background: #e8ddd1;
+            color: #5c4033;
+        }
+
+        .bake-form .btn-save:disabled {
+            background: #a08c7a;
+            cursor: wait;
+        }
+
+        .img-preview {
+            max-width: 200px;
+            max-height: 150px;
+            margin-top: 0.5rem;
+            border-radius: 8px;
+            display: none;
         }
 
         footer {
@@ -284,23 +379,23 @@
     </header>
 
     <main>
-        <section class="my-bakes-section">
+        <section class="my-bakes-section hidden" id="myBakesSection">
             <h2>My Bakes</h2>
-            <ul class="my-bakes-grid">
-                <!-- Add your bakes here! Each card looks like this:
-                <li class="bake-card">
-                    <img src="images/your-photo.jpg" alt="Description of your bake">
-                    <div class="bake-info">
-                        <h3>What You Made</h3>
-                        <p>Your notes about how it turned out.</p>
-                        <p class="bake-date">June 2026</p>
-                    </div>
-                </li>
-                -->
-                <li class="placeholder-card">
-                    <p>Your bakes will go here!<br>Upload a photo to the images/ folder and add a card.</p>
-                </li>
-            </ul>
+            <button class="add-bake-btn" id="addBakeBtn">+ Add a Bake</button>
+            <div class="bake-form" id="bakeForm">
+                <label for="bakeName">What did you make?</label>
+                <input type="text" id="bakeName" placeholder="e.g. Sourdough Focaccia">
+                <label for="bakeNotes">Notes</label>
+                <textarea id="bakeNotes" placeholder="How did it turn out? Any tips for next time?"></textarea>
+                <label for="bakeImage">Photo</label>
+                <input type="file" id="bakeImage" accept="image/*">
+                <img class="img-preview" id="imgPreview">
+                <div class="form-actions">
+                    <button class="btn-save" id="btnSave">Save Bake</button>
+                    <button class="btn-cancel" id="btnCancel">Cancel</button>
+                </div>
+            </div>
+            <ul class="my-bakes-grid" id="bakesGrid"></ul>
         </section>
 
         <h2>Top Rated Recipes</h2>
@@ -527,5 +622,171 @@
     <footer>
         <p>&copy; 2026 Nazanin's Kitchen</p>
     </footer>
+
+    <script>
+        const REPO = 'nazaninoo90/my-first-page';
+        const BAKES_FILE = 'bakes.json';
+        const isAdmin = new URLSearchParams(window.location.search).has('admin');
+
+        const section = document.getElementById('myBakesSection');
+        const grid = document.getElementById('bakesGrid');
+        const form = document.getElementById('bakeForm');
+        const addBtn = document.getElementById('addBakeBtn');
+        const saveBtn = document.getElementById('btnSave');
+        const cancelBtn = document.getElementById('btnCancel');
+        const imageInput = document.getElementById('bakeImage');
+        const preview = document.getElementById('imgPreview');
+
+        let bakes = [];
+        let token = null;
+
+        if (isAdmin) {
+            document.body.classList.add('admin-mode');
+            token = localStorage.getItem('gh_token');
+            if (!token) {
+                token = prompt('Enter your GitHub token (stored locally):');
+                if (token) localStorage.setItem('gh_token', token);
+            }
+        }
+
+        async function loadBakes() {
+            try {
+                const res = await fetch(`https://raw.githubusercontent.com/${REPO}/main/${BAKES_FILE}?t=${Date.now()}`);
+                if (res.ok) bakes = await res.json();
+            } catch (e) {}
+            renderBakes();
+        }
+
+        function renderBakes() {
+            grid.innerHTML = '';
+            if (bakes.length > 0 || isAdmin) {
+                section.classList.remove('hidden');
+            }
+            bakes.forEach(bake => {
+                const li = document.createElement('li');
+                li.className = 'bake-card';
+                li.innerHTML = `
+                    <img src="${bake.image}" alt="${bake.name}">
+                    <div class="bake-info">
+                        <h3>${bake.name}</h3>
+                        <p>${bake.notes}</p>
+                        <p class="bake-date">${bake.date}</p>
+                    </div>
+                `;
+                grid.appendChild(li);
+            });
+        }
+
+        addBtn.addEventListener('click', () => {
+            form.classList.add('visible');
+            addBtn.style.display = 'none';
+        });
+
+        cancelBtn.addEventListener('click', () => {
+            form.classList.remove('visible');
+            addBtn.style.display = 'inline-block';
+            resetForm();
+        });
+
+        imageInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = (ev) => {
+                    preview.src = ev.target.result;
+                    preview.style.display = 'block';
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+
+        saveBtn.addEventListener('click', async () => {
+            const name = document.getElementById('bakeName').value.trim();
+            const notes = document.getElementById('bakeNotes').value.trim();
+            const file = imageInput.files[0];
+
+            if (!name || !file) {
+                alert('Please add a name and photo.');
+                return;
+            }
+
+            saveBtn.disabled = true;
+            saveBtn.textContent = 'Saving...';
+
+            try {
+                const imgBase64 = await fileToBase64(file);
+                const ext = file.name.split('.').pop();
+                const imgFileName = `images/${Date.now()}.${ext}`;
+
+                await uploadFile(imgFileName, imgBase64, `Add image: ${name}`);
+
+                const imageUrl = `https://raw.githubusercontent.com/${REPO}/main/${imgFileName}`;
+                const now = new Date();
+                const date = now.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+
+                bakes.push({ name, notes, image: imageUrl, date });
+
+                await saveBakesJson();
+                renderBakes();
+                form.classList.remove('visible');
+                addBtn.style.display = 'inline-block';
+                resetForm();
+            } catch (e) {
+                alert('Error saving: ' + e.message);
+            }
+
+            saveBtn.disabled = false;
+            saveBtn.textContent = 'Save Bake';
+        });
+
+        function resetForm() {
+            document.getElementById('bakeName').value = '';
+            document.getElementById('bakeNotes').value = '';
+            imageInput.value = '';
+            preview.style.display = 'none';
+        }
+
+        function fileToBase64(file) {
+            return new Promise((resolve) => {
+                const reader = new FileReader();
+                reader.onload = () => resolve(reader.result.split(',')[1]);
+                reader.readAsDataURL(file);
+            });
+        }
+
+        async function getFileSha(path) {
+            const res = await fetch(`https://api.github.com/repos/${REPO}/contents/${path}`, {
+                headers: { 'Authorization': `token ${token}` }
+            });
+            if (res.ok) {
+                const data = await res.json();
+                return data.sha;
+            }
+            return null;
+        }
+
+        async function uploadFile(path, contentBase64, message) {
+            const sha = await getFileSha(path);
+            const body = { message, content: contentBase64 };
+            if (sha) body.sha = sha;
+
+            const res = await fetch(`https://api.github.com/repos/${REPO}/contents/${path}`, {
+                method: 'PUT',
+                headers: {
+                    'Authorization': `token ${token}`,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(body)
+            });
+            if (!res.ok) throw new Error('Failed to upload file');
+        }
+
+        async function saveBakesJson() {
+            const content = btoa(unescape(encodeURIComponent(JSON.stringify(bakes, null, 2))));
+            await uploadFile(BAKES_FILE, content, 'Update bakes');
+        }
+
+        loadBakes();
+    </script>
 </body>
 </html>
