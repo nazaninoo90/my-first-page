@@ -59,10 +59,73 @@
             padding-bottom: 0.5rem;
         }
 
-        .recipe-list {
+        .categories-grid {
             list-style: none;
             display: grid;
-            gap: 1.5rem;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 1.2rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .category-card {
+            background: #fff;
+            border-radius: 12px;
+            box-shadow: 0 3px 12px rgba(0, 0, 0, 0.08);
+            padding: 1.5rem;
+            text-align: center;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s, background 0.2s;
+            border: 2px solid transparent;
+        }
+
+        .category-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.12);
+            border-color: #d4a574;
+        }
+
+        .category-card.active {
+            background: #5c4033;
+            border-color: #5c4033;
+        }
+
+        .category-card.active .cat-icon {
+            opacity: 1;
+        }
+
+        .category-card.active .cat-name {
+            color: #faf7f2;
+        }
+
+        .category-card.active .cat-count {
+            color: #d4a574;
+        }
+
+        .cat-icon {
+            font-size: 2.2rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .cat-name {
+            font-size: 1rem;
+            font-weight: bold;
+            color: #5c4033;
+            margin-bottom: 0.2rem;
+        }
+
+        .cat-count {
+            font-size: 0.8rem;
+            color: #a08c7a;
+        }
+
+        .recipe-list {
+            list-style: none;
+            display: none;
+            gap: 1rem;
+        }
+
+        .recipe-list.visible {
+            display: grid;
         }
 
         .recipe-card {
@@ -71,7 +134,7 @@
             box-shadow: 0 3px 12px rgba(0, 0, 0, 0.08);
             overflow: hidden;
             display: grid;
-            grid-template-columns: 140px 1fr;
+            grid-template-columns: 100px 1fr;
             transition: transform 0.2s, box-shadow 0.2s;
         }
 
@@ -81,8 +144,8 @@
         }
 
         .recipe-img {
-            width: 140px;
-            height: 140px;
+            width: 100px;
+            height: 100px;
             display: flex;
             align-items: center;
             justify-content: center;
@@ -90,20 +153,20 @@
         }
 
         .recipe-img svg {
-            width: 100px;
-            height: 100px;
+            width: 70px;
+            height: 70px;
         }
 
         .recipe-content {
-            padding: 1.25rem 1.5rem;
+            padding: 1rem 1.25rem;
             display: flex;
             flex-direction: column;
             justify-content: center;
         }
 
         .recipe-content h3 {
-            font-size: 1.15rem;
-            margin-bottom: 0.4rem;
+            font-size: 1rem;
+            margin-bottom: 0.3rem;
             color: #5c4033;
         }
 
@@ -120,13 +183,13 @@
         }
 
         .recipe-content p {
-            font-size: 0.92rem;
+            font-size: 0.85rem;
             color: #6b5b4f;
-            margin-bottom: 0.4rem;
+            margin-bottom: 0.3rem;
         }
 
         .recipe-meta {
-            font-size: 0.8rem;
+            font-size: 0.75rem;
             color: #a08c7a;
             font-style: italic;
         }
@@ -134,6 +197,26 @@
         .rating {
             color: #d4a574;
             font-style: normal;
+        }
+
+        .back-btn {
+            display: none;
+            background: none;
+            border: none;
+            color: #5c4033;
+            font-family: 'Georgia', serif;
+            font-size: 0.95rem;
+            cursor: pointer;
+            margin-bottom: 1rem;
+            padding: 0.4rem 0;
+        }
+
+        .back-btn:hover {
+            color: #d4a574;
+        }
+
+        .back-btn.visible {
+            display: inline-block;
         }
 
         .my-bakes-section {
@@ -525,7 +608,10 @@
             }
             .recipe-img {
                 width: 100%;
-                height: 120px;
+                height: 100px;
+            }
+            .categories-grid {
+                grid-template-columns: repeat(2, 1fr);
             }
         }
     </style>
@@ -625,224 +711,15 @@
         </section>
 
         <h2>Top Rated Recipes</h2>
-        <ul class="recipe-list">
-            <!-- 1. Classic Sourdough Bread (King Arthur - 4.8 stars) -->
-            <li class="recipe-card">
-                <div class="recipe-img">
-                    <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
-                        <ellipse cx="50" cy="60" rx="38" ry="28" fill="#c8943e"/>
-                        <ellipse cx="50" cy="55" rx="35" ry="24" fill="#daa54a"/>
-                        <path d="M25 55 Q35 40 50 38 Q65 40 75 55" fill="#c8943e" opacity="0.6"/>
-                        <path d="M30 50 Q40 42 50 40 Q60 42 70 50" stroke="#a07030" stroke-width="1" fill="none"/>
-                        <path d="M35 58 Q50 52 65 58" stroke="#a07030" stroke-width="0.8" fill="none"/>
-                    </svg>
-                </div>
-                <div class="recipe-content">
-                    <h3><a href="https://www.kingarthurbaking.com/recipes/naturally-leavened-sourdough-bread-recipe" target="_blank">Classic Sourdough Bread</a></h3>
-                    <p>The quintessential artisan loaf with a shatteringly crisp crust and open, airy crumb. Long fermentation develops complex tangy flavor.</p>
-                    <span class="recipe-meta"><span class="rating">&#9733;&#9733;&#9733;&#9733;&#9733;</span> King Arthur Baking &middot; 24hr total</span>
-                </div>
-            </li>
-
-            <!-- 2. Sourdough Discard Focaccia (The Perfect Loaf - 4.9 stars) -->
-            <li class="recipe-card">
-                <div class="recipe-img">
-                    <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
-                        <rect x="15" y="35" width="70" height="40" rx="8" fill="#e8c864"/>
-                        <rect x="18" y="38" width="64" height="34" rx="6" fill="#dbb84a"/>
-                        <circle cx="30" cy="50" r="3" fill="#5a7a30"/>
-                        <circle cx="50" cy="45" r="2.5" fill="#5a7a30"/>
-                        <circle cx="70" cy="52" r="3" fill="#5a7a30"/>
-                        <circle cx="40" cy="58" r="2" fill="#5a7a30"/>
-                        <circle cx="60" cy="60" r="2.5" fill="#5a7a30"/>
-                        <ellipse cx="35" cy="48" r="4" ry="2" fill="rgba(180,140,60,0.4)"/>
-                        <ellipse cx="55" cy="55" r="5" ry="2" fill="rgba(180,140,60,0.4)"/>
-                        <ellipse cx="65" cy="45" r="3" ry="1.5" fill="rgba(180,140,60,0.4)"/>
-                    </svg>
-                </div>
-                <div class="recipe-content">
-                    <h3><a href="https://www.theperfectloaf.com/sourdough-focaccia/" target="_blank">Sourdough Focaccia</a></h3>
-                    <p>Incredibly light and airy with crispy olive oil edges. Dimpled top with fresh rosemary and flaky sea salt. Uses discard starter.</p>
-                    <span class="recipe-meta"><span class="rating">&#9733;&#9733;&#9733;&#9733;&#9733;</span> The Perfect Loaf &middot; 14hr total</span>
-                </div>
-            </li>
-
-            <!-- 3. Sourdough Pancakes (King Arthur - 4.7 stars) -->
-            <li class="recipe-card">
-                <div class="recipe-img">
-                    <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
-                        <ellipse cx="50" cy="70" rx="30" ry="8" fill="#c8943e"/>
-                        <ellipse cx="50" cy="65" rx="28" ry="7" fill="#daa54a"/>
-                        <ellipse cx="50" cy="60" rx="26" ry="6" fill="#c8943e"/>
-                        <ellipse cx="50" cy="56" rx="24" ry="5.5" fill="#daa54a"/>
-                        <path d="M35 50 Q42 42 50 50 Q58 42 65 50" fill="#8b5e3c" opacity="0.7"/>
-                        <ellipse cx="50" cy="48" rx="16" ry="4" fill="#c8943e" opacity="0.5"/>
-                        <circle cx="44" cy="54" r="2" fill="#4a6a8a" opacity="0.5"/>
-                        <circle cx="56" cy="52" r="2" fill="#4a6a8a" opacity="0.5"/>
-                        <circle cx="50" cy="58" r="1.5" fill="#4a6a8a" opacity="0.5"/>
-                    </svg>
-                </div>
-                <div class="recipe-content">
-                    <h3><a href="https://www.kingarthurbaking.com/recipes/sourdough-pancakes-or-waffles-recipe" target="_blank">Sourdough Discard Pancakes</a></h3>
-                    <p>Extra fluffy and slightly tangy pancakes that use up sourdough discard. Light, tender, and perfect for lazy weekend mornings.</p>
-                    <span class="recipe-meta"><span class="rating">&#9733;&#9733;&#9733;&#9733;&#9734;</span> King Arthur Baking &middot; 30 min</span>
-                </div>
-            </li>
-
-            <!-- 4. Sourdough Pizza (Clever Carrot - 4.8 stars) -->
-            <li class="recipe-card">
-                <div class="recipe-img">
-                    <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
-                        <circle cx="50" cy="55" r="35" fill="#daa54a"/>
-                        <circle cx="50" cy="55" r="32" fill="#e8c864"/>
-                        <circle cx="50" cy="55" r="30" fill="#cc3333" opacity="0.7"/>
-                        <circle cx="38" cy="48" r="5" fill="#f5e6b8"/>
-                        <circle cx="58" cy="45" r="6" fill="#f5e6b8"/>
-                        <circle cx="45" cy="62" r="5.5" fill="#f5e6b8"/>
-                        <circle cx="62" cy="58" r="4.5" fill="#f5e6b8"/>
-                        <circle cx="50" cy="52" r="3" fill="#3a6a20" opacity="0.7"/>
-                        <circle cx="40" cy="55" r="2" fill="#3a6a20" opacity="0.7"/>
-                        <circle cx="60" cy="50" r="2.5" fill="#3a6a20" opacity="0.7"/>
-                    </svg>
-                </div>
-                <div class="recipe-content">
-                    <h3><a href="https://www.theclevercarrot.com/2019/03/sourdough-pizza-dough/" target="_blank">Sourdough Pizza Dough</a></h3>
-                    <p>48-hour cold fermented pizza dough with incredible chew and blistered edges. Restaurant-quality crust with complex sourdough flavor.</p>
-                    <span class="recipe-meta"><span class="rating">&#9733;&#9733;&#9733;&#9733;&#9733;</span> The Clever Carrot &middot; 48hr ferment</span>
-                </div>
-            </li>
-
-            <!-- 5. Sourdough Cinnamon Rolls (Farmhouse on Boone - 4.9 stars) -->
-            <li class="recipe-card">
-                <div class="recipe-img">
-                    <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
-                        <circle cx="50" cy="55" r="22" fill="#daa54a"/>
-                        <path d="M50 38 Q60 40 62 50 Q62 60 54 64 Q46 66 42 58 Q38 50 44 44 Q48 40 50 38" fill="none" stroke="#8b4513" stroke-width="3"/>
-                        <path d="M50 42 Q56 44 57 50 Q57 56 52 58 Q47 60 45 55 Q43 50 47 47" fill="none" stroke="#8b4513" stroke-width="2.5"/>
-                        <ellipse cx="50" cy="50" rx="18" ry="16" fill="rgba(255,255,255,0.4)"/>
-                        <path d="M35 45 Q50 38 65 45 Q68 55 60 62 Q50 68 40 62 Q32 55 35 45" fill="none" stroke="#f5f5f0" stroke-width="2" opacity="0.7"/>
-                    </svg>
-                </div>
-                <div class="recipe-content">
-                    <h3><a href="https://www.farmhouseonboone.com/sourdough-cinnamon-rolls" target="_blank">Sourdough Cinnamon Rolls</a></h3>
-                    <p>Pillowy soft rolls swirled with brown sugar and cinnamon, topped with tangy cream cheese frosting. Overnight rise for easy morning baking.</p>
-                    <span class="recipe-meta"><span class="rating">&#9733;&#9733;&#9733;&#9733;&#9733;</span> Farmhouse on Boone &middot; 12hr overnight</span>
-                </div>
-            </li>
-
-            <!-- 6. Sourdough Discard Crackers (King Arthur - 4.9 stars) -->
-            <li class="recipe-card">
-                <div class="recipe-img">
-                    <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
-                        <rect x="20" y="40" width="25" height="25" rx="2" fill="#d4a050" transform="rotate(-5 32 52)"/>
-                        <rect x="40" y="35" width="22" height="22" rx="2" fill="#c89040" transform="rotate(3 51 46)"/>
-                        <rect x="55" y="45" width="24" height="24" rx="2" fill="#dab060" transform="rotate(-2 67 57)"/>
-                        <rect x="30" y="55" width="20" height="20" rx="2" fill="#c8943e" transform="rotate(4 40 65)"/>
-                        <circle cx="30" cy="50" r="1" fill="#5a7a30"/>
-                        <circle cx="52" cy="43" r="1" fill="#5a7a30"/>
-                        <circle cx="67" cy="55" r="1" fill="#5a7a30"/>
-                        <circle cx="38" cy="63" r="0.8" fill="#5a7a30"/>
-                        <circle cx="60" cy="60" r="0.8" fill="#888"/>
-                        <circle cx="45" cy="50" r="0.8" fill="#888"/>
-                    </svg>
-                </div>
-                <div class="recipe-content">
-                    <h3><a href="https://www.kingarthurbaking.com/recipes/sourdough-crackers-recipe" target="_blank">Sourdough Discard Crackers</a></h3>
-                    <p>Paper-thin, crispy crackers with everything-bagel seasoning. The #1 way to use discard — pairs perfectly with cheese and hummus.</p>
-                    <span class="recipe-meta"><span class="rating">&#9733;&#9733;&#9733;&#9733;&#9733;</span> King Arthur Baking &middot; 45 min</span>
-                </div>
-            </li>
-
-            <!-- 7. Sourdough Banana Bread (Little Spoon Farm - 4.8 stars) -->
-            <li class="recipe-card">
-                <div class="recipe-img">
-                    <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
-                        <rect x="25" y="35" width="50" height="40" rx="6" fill="#8b5e3c"/>
-                        <rect x="28" y="38" width="44" height="34" rx="4" fill="#a06830"/>
-                        <path d="M30 55 Q50 48 70 55" stroke="#5a3a1a" stroke-width="1.5" fill="none"/>
-                        <circle cx="38" cy="50" r="3" fill="#4a6a3a" opacity="0.5"/>
-                        <circle cx="52" cy="48" r="2.5" fill="#4a6a3a" opacity="0.5"/>
-                        <circle cx="62" cy="52" r="2" fill="#4a6a3a" opacity="0.5"/>
-                        <path d="M35 42 Q50 38 65 42" stroke="#6a4420" stroke-width="1" fill="none"/>
-                    </svg>
-                </div>
-                <div class="recipe-content">
-                    <h3><a href="https://littlespoonfarm.com/sourdough-banana-bread/" target="_blank">Sourdough Banana Bread</a></h3>
-                    <p>Unbelievably moist with a tender crumb. The sourdough starter adds a subtle complexity that takes banana bread to the next level.</p>
-                    <span class="recipe-meta"><span class="rating">&#9733;&#9733;&#9733;&#9733;&#9733;</span> Little Spoon Farm &middot; 1hr 15min</span>
-                </div>
-            </li>
-
-            <!-- 8. Sourdough Bagels (The Perfect Loaf - 4.7 stars) -->
-            <li class="recipe-card">
-                <div class="recipe-img">
-                    <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
-                        <ellipse cx="50" cy="58" rx="25" ry="20" fill="#c8943e"/>
-                        <ellipse cx="50" cy="55" rx="25" ry="20" fill="#daa54a"/>
-                        <ellipse cx="50" cy="55" rx="10" ry="8" fill="#faf7f2"/>
-                        <ellipse cx="50" cy="53" rx="9" ry="7" fill="#f0e8dc"/>
-                        <circle cx="40" cy="47" r="1.5" fill="#2a1a0e"/>
-                        <circle cx="55" cy="46" r="1.2" fill="#2a1a0e"/>
-                        <circle cx="48" cy="44" r="1" fill="#2a1a0e"/>
-                        <circle cx="60" cy="50" r="1.3" fill="#2a1a0e"/>
-                        <circle cx="42" cy="52" r="1" fill="#2a1a0e"/>
-                    </svg>
-                </div>
-                <div class="recipe-content">
-                    <h3><a href="https://www.theperfectloaf.com/sourdough-bagels/" target="_blank">Sourdough Bagels</a></h3>
-                    <p>Chewy, glossy bagels with that perfect dense interior. Boiled then baked with your choice of everything, sesame, or poppy topping.</p>
-                    <span class="recipe-meta"><span class="rating">&#9733;&#9733;&#9733;&#9733;&#9734;</span> The Perfect Loaf &middot; 18hr total</span>
-                </div>
-            </li>
-
-            <!-- 9. Sourdough Waffles (King Arthur - 4.8 stars) -->
-            <li class="recipe-card">
-                <div class="recipe-img">
-                    <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
-                        <rect x="22" y="38" width="56" height="35" rx="4" fill="#daa54a"/>
-                        <line x1="22" y1="45" x2="78" y2="45" stroke="#c8943e" stroke-width="1"/>
-                        <line x1="22" y1="52" x2="78" y2="52" stroke="#c8943e" stroke-width="1"/>
-                        <line x1="22" y1="59" x2="78" y2="59" stroke="#c8943e" stroke-width="1"/>
-                        <line x1="22" y1="66" x2="78" y2="66" stroke="#c8943e" stroke-width="1"/>
-                        <line x1="30" y1="38" x2="30" y2="73" stroke="#c8943e" stroke-width="1"/>
-                        <line x1="38" y1="38" x2="38" y2="73" stroke="#c8943e" stroke-width="1"/>
-                        <line x1="46" y1="38" x2="46" y2="73" stroke="#c8943e" stroke-width="1"/>
-                        <line x1="54" y1="38" x2="54" y2="73" stroke="#c8943e" stroke-width="1"/>
-                        <line x1="62" y1="38" x2="62" y2="73" stroke="#c8943e" stroke-width="1"/>
-                        <line x1="70" y1="38" x2="70" y2="73" stroke="#c8943e" stroke-width="1"/>
-                        <path d="M30 40 Q50 30 70 40 Q72 38 70 40" fill="#f5d080" opacity="0.6"/>
-                        <ellipse cx="50" cy="35" rx="12" ry="4" fill="#f5d080" opacity="0.8"/>
-                    </svg>
-                </div>
-                <div class="recipe-content">
-                    <h3><a href="https://www.kingarthurbaking.com/recipes/classic-sourdough-waffles-recipe" target="_blank">Sourdough Waffles</a></h3>
-                    <p>Overnight fermented batter yields impossibly crispy waffles with a custardy interior. The best weekend brunch recipe you'll ever make.</p>
-                    <span class="recipe-meta"><span class="rating">&#9733;&#9733;&#9733;&#9733;&#9733;</span> King Arthur Baking &middot; Overnight + 20min</span>
-                </div>
-            </li>
-
-            <!-- 10. Sourdough Chocolate Cake (The Clever Carrot - 4.8 stars) -->
-            <li class="recipe-card">
-                <div class="recipe-img">
-                    <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
-                        <rect x="25" y="45" width="50" height="30" rx="4" fill="#3a1a0a"/>
-                        <rect x="25" y="40" width="50" height="20" rx="4" fill="#4a2a15"/>
-                        <rect x="28" y="43" width="44" height="2" fill="#5a3a20"/>
-                        <path d="M25 50 Q50 45 75 50" fill="#2a1005" opacity="0.5"/>
-                        <ellipse cx="50" cy="40" rx="24" ry="5" fill="#5a3520"/>
-                        <path d="M30 38 Q38 32 50 35 Q62 32 70 38" fill="#6a4028" opacity="0.7"/>
-                        <circle cx="42" cy="38" r="2" fill="#8b1a1a" opacity="0.7"/>
-                        <circle cx="55" cy="36" r="1.5" fill="#8b1a1a" opacity="0.7"/>
-                        <circle cx="48" cy="34" r="1.8" fill="#8b1a1a" opacity="0.7"/>
-                    </svg>
-                </div>
-                <div class="recipe-content">
-                    <h3><a href="https://www.theclevercarrot.com/2020/04/sourdough-chocolate-cake/" target="_blank">Sourdough Chocolate Cake</a></h3>
-                    <p>Deeply rich and impossibly moist chocolate cake. The sourdough starter replaces buttermilk, adding tenderness and keeping it fresh for days.</p>
-                    <span class="recipe-meta"><span class="rating">&#9733;&#9733;&#9733;&#9733;&#9733;</span> The Clever Carrot &middot; 1hr 10min</span>
-                </div>
-            </li>
+        <ul class="categories-grid" id="categoriesGrid">
+            <li class="category-card" data-category="breads"><div class="cat-icon">&#127838;</div><div class="cat-name">Breads</div><div class="cat-count">3 recipes</div></li>
+            <li class="category-card" data-category="flatbreads"><div class="cat-icon">&#127829;</div><div class="cat-name">Flatbreads & Pizza</div><div class="cat-count">2 recipes</div></li>
+            <li class="category-card" data-category="breakfast"><div class="cat-icon">&#129374;</div><div class="cat-name">Breakfast</div><div class="cat-count">3 recipes</div></li>
+            <li class="category-card" data-category="sweets"><div class="cat-icon">&#127856;</div><div class="cat-name">Sweets & Desserts</div><div class="cat-count">3 recipes</div></li>
+            <li class="category-card" data-category="snacks"><div class="cat-icon">&#129472;</div><div class="cat-name">Snacks</div><div class="cat-count">2 recipes</div></li>
         </ul>
+        <button class="back-btn" id="backBtn">&larr; All Categories</button>
+        <ul class="recipe-list" id="recipeList"></ul>
     </main>
 
     <div class="lightbox" id="lightbox">
@@ -1252,7 +1129,11 @@
             if (bakes.length > 0 || isAdmin) {
                 section.classList.remove('hidden');
             }
-            const sorted = bakes.map((b, i) => ({...b, _i: i})).sort((a, b) => b._i - a._i);
+            const sorted = bakes.map((b, i) => ({...b, _i: i})).sort((a, b) => {
+                const tA = a.timestamp || 0;
+                const tB = b.timestamp || 0;
+                return tB - tA;
+            });
             sorted.forEach(bake => {
                 const index = bake._i;
                 const li = document.createElement('li');
@@ -1406,7 +1287,7 @@
                 const imageUrl = `https://raw.githubusercontent.com/${REPO}/main/${imgFileName}`;
                 const finalDate = date || new Date().toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
 
-                bakes.push({ name, notes, image: imageUrl, date: finalDate });
+                bakes.push({ name, notes, image: imageUrl, date: finalDate, timestamp: Date.now() });
 
                 await saveBakesJson();
                 renderBakes();
@@ -1469,6 +1350,83 @@
         async function saveBakesJson() {
             const content = btoa(unescape(encodeURIComponent(JSON.stringify(bakes, null, 2))));
             await uploadFile(BAKES_FILE, content, 'Update bakes');
+        }
+
+        // --- Recipe Categories ---
+        const recipes = {
+            breads: [
+                { name: 'Classic Sourdough Bread', url: 'https://www.kingarthurbaking.com/recipes/naturally-leavened-sourdough-bread-recipe', desc: 'Crusty artisan loaf with open crumb and complex tangy flavor.', source: 'King Arthur', rating: 5, time: '24hr' },
+                { name: 'Sourdough Bagels', url: 'https://www.theperfectloaf.com/sourdough-bagels/', desc: 'Chewy, glossy bagels boiled and baked with everything topping.', source: 'The Perfect Loaf', rating: 4, time: '18hr' },
+                { name: 'Sourdough Banana Bread', url: 'https://littlespoonfarm.com/sourdough-banana-bread/', desc: 'Moist banana bread with subtle sourdough complexity.', source: 'Little Spoon Farm', rating: 5, time: '1hr 15min' },
+            ],
+            flatbreads: [
+                { name: 'Sourdough Focaccia', url: 'https://www.theperfectloaf.com/sourdough-focaccia/', desc: 'Light and airy with crispy olive oil edges, rosemary and sea salt.', source: 'The Perfect Loaf', rating: 5, time: '14hr' },
+                { name: 'Sourdough Pizza Dough', url: 'https://www.theclevercarrot.com/2019/03/sourdough-pizza-dough/', desc: '48-hour cold fermented dough with incredible chew and blistered edges.', source: 'The Clever Carrot', rating: 5, time: '48hr' },
+            ],
+            breakfast: [
+                { name: 'Sourdough Discard Pancakes', url: 'https://www.kingarthurbaking.com/recipes/sourdough-pancakes-or-waffles-recipe', desc: 'Extra fluffy, slightly tangy pancakes perfect for weekends.', source: 'King Arthur', rating: 4, time: '30min' },
+                { name: 'Sourdough Waffles', url: 'https://www.kingarthurbaking.com/recipes/classic-sourdough-waffles-recipe', desc: 'Overnight fermented batter yields impossibly crispy waffles.', source: 'King Arthur', rating: 5, time: 'Overnight + 20min' },
+                { name: 'Sourdough Cinnamon Rolls', url: 'https://www.farmhouseonboone.com/sourdough-cinnamon-rolls', desc: 'Pillowy rolls with cinnamon sugar and cream cheese frosting.', source: 'Farmhouse on Boone', rating: 5, time: '12hr overnight' },
+            ],
+            sweets: [
+                { name: 'Sourdough Chocolate Cake', url: 'https://www.theclevercarrot.com/2020/04/sourdough-chocolate-cake/', desc: 'Deeply rich and moist. Starter replaces buttermilk for tender crumb.', source: 'The Clever Carrot', rating: 5, time: '1hr 10min' },
+                { name: 'Sourdough Brownies', url: 'https://www.kingarthurbaking.com/recipes/sourdough-brownies-recipe', desc: 'Fudgy, chewy brownies with a crackly top using discard starter.', source: 'King Arthur', rating: 5, time: '45min' },
+                { name: 'Sourdough Sugar Cookies', url: 'https://www.farmhouseonboone.com/sourdough-sugar-cookies', desc: 'Soft, buttery sugar cookies with a hint of tang. Perfect for decorating.', source: 'Farmhouse on Boone', rating: 5, time: '2hr' },
+            ],
+            snacks: [
+                { name: 'Sourdough Discard Crackers', url: 'https://www.kingarthurbaking.com/recipes/sourdough-crackers-recipe', desc: 'Paper-thin, crispy crackers with everything-bagel seasoning.', source: 'King Arthur', rating: 5, time: '45min' },
+                { name: 'Sourdough Soft Pretzels', url: 'https://www.theclevercarrot.com/2020/01/sourdough-soft-pretzels/', desc: 'Chewy, salty pretzels with that signature dark golden crust.', source: 'The Clever Carrot', rating: 5, time: '4hr' },
+            ],
+        };
+
+        const categoriesGrid = document.getElementById('categoriesGrid');
+        const recipeList = document.getElementById('recipeList');
+        const backBtn = document.getElementById('backBtn');
+
+        categoriesGrid.querySelectorAll('.category-card').forEach(card => {
+            card.addEventListener('click', () => {
+                const cat = card.dataset.category;
+                showCategory(cat);
+                categoriesGrid.querySelectorAll('.category-card').forEach(c => c.classList.remove('active'));
+                card.classList.add('active');
+            });
+        });
+
+        backBtn.addEventListener('click', () => {
+            recipeList.classList.remove('visible');
+            backBtn.classList.remove('visible');
+            categoriesGrid.querySelectorAll('.category-card').forEach(c => c.classList.remove('active'));
+        });
+
+        function showCategory(cat) {
+            const items = recipes[cat] || [];
+            recipeList.innerHTML = '';
+            items.forEach(r => {
+                const stars = '&#9733;'.repeat(r.rating) + '&#9734;'.repeat(5 - r.rating);
+                const li = document.createElement('li');
+                li.className = 'recipe-card';
+                li.innerHTML = `
+                    <div class="recipe-img">
+                        <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+                            <circle cx="50" cy="50" r="40" fill="#f5ede4"/>
+                            <text x="50" y="62" text-anchor="middle" font-size="30">${getCatEmoji(cat)}</text>
+                        </svg>
+                    </div>
+                    <div class="recipe-content">
+                        <h3><a href="${r.url}" target="_blank">${r.name}</a></h3>
+                        <p>${r.desc}</p>
+                        <span class="recipe-meta"><span class="rating">${stars}</span> ${r.source} &middot; ${r.time}</span>
+                    </div>
+                `;
+                recipeList.appendChild(li);
+            });
+            recipeList.classList.add('visible');
+            backBtn.classList.add('visible');
+        }
+
+        function getCatEmoji(cat) {
+            const map = { breads: '&#127838;', flatbreads: '&#127829;', breakfast: '&#129374;', sweets: '&#127856;', snacks: '&#129472;' };
+            return map[cat] || '&#127838;';
         }
 
         loadBakes();
